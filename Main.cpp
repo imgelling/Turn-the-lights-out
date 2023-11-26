@@ -28,28 +28,44 @@ public:
 		attempts = 1;
 	}
 
+	// Generates a new random board if newSeed is true, otherwise it 
+	// generates the same board from the seed
 	void ResetBoard(const bool newSeed)
 	{
 		if (newSeed)
 		{
+			// Get a new seed
 			random.NewSeed();
+			// Reset attempts as it is a new board
 			attempts = 1;
 		}
 		else
 		{
+			// Set the seed to what it was. This
+			// will alow the same numbers to be 
+			// generated and the same board
+			// from those numbers
 			random.SetSeed(random.GetSeed());
+			// Increment attempts as it is a new
+			// try at the same board
 			attempts++;
 		}
+
+		// Save the seed for future resets
 		seed = random.GetSeed();
+
+		// Reset all per attempt data
 		clicks = 0;
 		time = 0;
 		hasWon = false;
 
+		// Clear the board
+		ZeroMemory(gameBoard, boardSize * boardSize);
 
-		// Set a number of loops to do
-		// Then instead of just making a light turn on
-		// Act like the mouse is clicked and change
-		// lights accordingly
+		// Generate the board
+		
+		// A first thought of generating the board.
+		// Makes unsolveable ones though.  So no.
 		//for (uint32_t y = 0; y < boardSize; y++)
 		//{
 		//	for (uint32_t x = 0; x < boardSize; x++)
@@ -64,7 +80,12 @@ public:
 		//		}
 		//	}
 		//}
-		ZeroMemory(gameBoard, boardSize * boardSize);
+		
+		// To generate a solveable board...
+		// 1 - Set a number of loops to do (more can 
+		//     mean a harder board)
+		// 2 - Simulate like the mouse is clicked and change
+		//     lights accordingly
 		uint32_t x = 0;
 		uint32_t y = 0;
 		for (uint32_t loops = 0; loops < 5; loops++)
@@ -84,13 +105,14 @@ public:
 		}
 	}
 
+	// Renders the board out to the PixelMode buffer
 	void DrawBoard()
 	{
-		// Draw board
 		uint32_t scale = 360 / boardSize;
-		game::Recti lightRect;
 		uint32_t xOffset = pixelMode.GetPixelFrameBufferSize().width - 360;
-		game::Color lightColor = game::Colors::DarkGray;
+		game::Color lightColor;
+		game::Recti lightRect;
+
 		for (uint32_t y = 0; y < boardSize; y++)
 		{
 			for (uint32_t x = 0; x < boardSize; x++)
@@ -106,6 +128,10 @@ public:
 		}
 	}
 
+	// Checks the whole board for lights. If
+	// it finds one, the user didn't win, so return
+	// false.  No lights found means user one so 
+	// return true.
 	bool CheckForWin() const
 	{
 		for (uint32_t light = 0; light < boardSize * boardSize; light++)
@@ -115,6 +141,11 @@ public:
 		return true;
 	}
 
+	// Checks a light tile using the inputs (in boardspace).
+	// If the coordinates are in the board, turn the tile
+	// the opposite of what it was and return true.  The
+	// return is used to see if the function actually did
+	// something.
 	bool DoLightUpdate(const uint32_t x, const uint32_t y)
 	{
 		if (x < 0) return false;
@@ -123,6 +154,40 @@ public:
 		if (y > boardSize - 1) return false;
 		gameBoard[y * boardSize + x] = !gameBoard[y * boardSize + x];
 		return true;
+	}
+
+	void CheckMouseClick()
+	{
+		uint32_t posx = 0;
+		uint32_t posy = 0;
+		uint32_t scale = 360 / boardSize;
+		game::Pointi scaledMousePosition = pixelMode.GetScaledMousePosition();
+
+		// Convert the scaled mouse coordinates 
+		// (PixelModespace, not screenspace) to 
+		// boardspace
+		posx = scaledMousePosition.x - (pixelMode.GetPixelFrameBufferSize().width - 1 - 360);
+		posx = posx / scale;
+		posy = scaledMousePosition.y / scale;
+
+		// Center
+		if (DoLightUpdate(posx, posy))
+		{
+			// DoLightUpdate will return true if the user
+			// clicked on the game board, but only need
+			// to check the original position
+			clicks++;
+		}
+		// Left
+		DoLightUpdate(posx - 1, posy);
+		// Up
+		DoLightUpdate(posx, posy - 1);
+		// Right
+		DoLightUpdate(posx + 1, posy);
+		// Down
+		DoLightUpdate(posx, posy + 1);
+
+		hasWon = CheckForWin();
 	}
 
 	void Initialize()
@@ -161,18 +226,17 @@ public:
 
 	void Update(const float_t msElapsed)
 	{
-		game::Pointi scaledMousePos = pixelMode.GetScaledMousePosition();
-
+		// If the player has not won, increment the time
 		if (!hasWon)
 		{
 			time += msElapsed / 1000.0f;
 		}
-
-		// Handle Input
+		// Toggle fullscreen
 		if (geKeyboard.WasKeyReleased(geK_F11))
 		{
 			geToggleFullscreen();
 		}
+		// Quit the game
 		if (geKeyboard.WasKeyReleased(geK_ESCAPE))
 		{
 			geStopEngine();
@@ -193,40 +257,10 @@ public:
 			boardSize == 5 ? boardSize = 9 : boardSize = 5;
 			ResetBoard(true);
 		}
-
 		// Press a light
 		if (geMouse.WasButtonReleased(geMOUSE_LEFT) && !hasWon)
 		{
-			uint32_t posx = 0;
-			uint32_t posy = 0;
-			uint32_t scale = 360 / boardSize;
-			posx = scaledMousePos.x - (pixelMode.GetPixelFrameBufferSize().width - 1 - 360);
-			posx = posx / scale;
-			posy = scaledMousePos.y / scale;
-
-			if (posx < 0) return;
-			if (posx > boardSize - 1) return;
-			if (posy < 0) return;
-			if (posy > boardSize - 1) return;
-
-			// Center
-			if (DoLightUpdate(posx, posy))
-			{
-				// DoLightUpdate will return true if the user
-				// clicked on the game board, but only need
-				// to check the original position
-				clicks++;
-			}
-			// Left
-			DoLightUpdate(posx - 1, posy);
-			// Up
-			DoLightUpdate(posx, posy - 1);
-			// Right
-			DoLightUpdate(posx + 1, posy);
-			// Down
-			DoLightUpdate(posx, posy + 1);
-
-			hasWon = CheckForWin();
+			CheckMouseClick();
 		}
 	}
 
