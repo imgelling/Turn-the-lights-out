@@ -1,18 +1,21 @@
 #include "game.h"
 
+#define LIGHT_ON_COLOR game::Colors::White
+#define LIGHT_OFF_COLOR game::Colors::DarkGray
+
 class Game : public game::Engine
 {
 
 public:
-	game::PixelMode pixelMode;
-	uint32_t boardSize; // 5 or 9 , 72px or 40px
-	game::Random random;
-	uint32_t seed;
-	bool *gameBoard;
-	uint32_t clicks;
-	float_t time;
-	uint32_t attempts;
-	bool won;
+	game::PixelMode pixelMode;  // Draws pixel by pixel
+	uint32_t boardSize;			// Size of the board, 5 or 7 lights square
+	game::Random random;		// Random number generator
+	uint32_t seed;				// Seed for the game board, can be used to regen the same board
+	bool *gameBoard;			// Holds data about the lights on the board, on or off
+	uint32_t clicks;			// How many clicks the user has used to try and solve the board
+	float_t time;				// Time it has taken the user to try and solve the board
+	uint32_t attempts;			// Attempts the user has taken to try and solve the board
+	bool hasWon;				// Has the user won?
 
 	Game() : game::Engine()
 	{
@@ -21,7 +24,7 @@ public:
 		seed = 0;
 		clicks = 0;
 		time = 0;
-		won = false;
+		hasWon = false;
 		attempts = 1;
 	}
 
@@ -40,7 +43,7 @@ public:
 		seed = random.GetSeed();
 		clicks = 0;
 		time = 0;
-		won = false;
+		hasWon = false;
 
 
 		// Set a number of loops to do
@@ -96,11 +99,30 @@ public:
 				lightRect.top = y * scale;
 				lightRect.right = lightRect.left + scale-1;
 				lightRect.bottom = lightRect.top + scale-1;
-				lightColor = gameBoard[y * boardSize + x] ? game::Colors::White : game::Colors::DarkGray;
+				lightColor = gameBoard[y * boardSize + x] ? LIGHT_ON_COLOR : LIGHT_OFF_COLOR;
 				pixelMode.RectFilledClip(lightRect, lightColor);
-				pixelMode.RectClip(lightRect, game::Colors::Red); // same
+				pixelMode.RectClip(lightRect, game::Colors::Red);
 			}
 		}
+	}
+
+	bool CheckForWin() const
+	{
+		for (uint32_t light = 0; light < boardSize * boardSize; light++)
+		{
+			if (gameBoard[light]) return false;
+		}
+		return true;
+	}
+
+	bool DoLightUpdate(const uint32_t x, const uint32_t y)
+	{
+		if (x < 0) return false;
+		if (x > boardSize - 1) return false;
+		if (y < 0) return false;
+		if (y > boardSize - 1) return false;
+		gameBoard[y * boardSize + x] = !gameBoard[y * boardSize + x];
+		return true;
 	}
 
 	void Initialize()
@@ -137,21 +159,11 @@ public:
 		delete[] gameBoard;
 	}
 
-	bool DoLightUpdate(const uint32_t x, const uint32_t y)
-	{
-		if (x < 0) return false;
-		if (x > boardSize - 1) return false;
-		if (y < 0) return false;
-		if (y > boardSize - 1) return false;
-		gameBoard[y * boardSize + x] = !gameBoard[y * boardSize + x];
-		return true;
-	}
-
 	void Update(const float_t msElapsed)
 	{
 		game::Pointi scaledMousePos = pixelMode.GetScaledMousePosition();
 
-		if (!won)
+		if (!hasWon)
 		{
 			time += msElapsed / 1000.0f;
 		}
@@ -183,7 +195,7 @@ public:
 		}
 
 		// Press a light
-		if (geMouse.WasButtonReleased(geMOUSE_LEFT) && !won)
+		if (geMouse.WasButtonReleased(geMOUSE_LEFT) && !hasWon)
 		{
 			uint32_t posx = 0;
 			uint32_t posy = 0;
@@ -214,17 +226,8 @@ public:
 			// Down
 			DoLightUpdate(posx, posy + 1);
 
-			won = CheckForWin();
+			hasWon = CheckForWin();
 		}
-	}
-
-	bool CheckForWin() const
-	{
-		for (uint32_t light = 0; light < boardSize * boardSize; light++)
-		{
-			if (gameBoard[light]) return false;
-		}
-		return true;
 	}
 
 	void Render(const float_t msElapsed)
@@ -242,7 +245,7 @@ public:
 		pixelMode.TextClip("Time: " + std::to_string(time), 10, 40, game::Colors::White);
 		pixelMode.TextClip("Attempts: " + std::to_string(attempts), 10, 50, game::Colors::White);
 
-		if (won)
+		if (hasWon)
 		{
 			pixelMode.Text("YOU WON!", 10, (360 >> 1) - (80 >> 1), game::Colors::Green, 10);
 		}
