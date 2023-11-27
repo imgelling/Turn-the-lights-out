@@ -132,10 +132,11 @@ public:
 	// Renders the board out to the PixelMode buffer
 	void DrawBoard()
 	{
-		uint32_t scale = 360 / boardSize;
-		uint32_t xOffset = pixelMode.GetPixelFrameBufferSize().width - 360;
-		game::Color lightColor;
-		game::Recti lightRect;
+		uint32_t scale = 360 / boardSize;	// Used to scale to boardspace
+		uint32_t xOffset = pixelMode.GetPixelFrameBufferSize().width - 360;  // Offset to render the board
+		game::Color lightColor;				// Color of light to render
+		game::Recti lightRect;				// Rectangle area to draw the light
+
 
 		for (uint32_t y = 0; y < boardSize; y++)
 		{
@@ -154,7 +155,7 @@ public:
 
 	// Checks the whole board for lights. If
 	// it finds one, the user didn't win, so return
-	// false.  No lights found means user one so 
+	// false.  No lights found means user won so 
 	// return true.
 	bool CheckForWin() const
 	{
@@ -182,35 +183,37 @@ public:
 
 	void CheckMouseClick()
 	{
-		uint32_t posx = 0;
-		uint32_t posy = 0;
+		uint32_t posX = 0;
+		uint32_t posY = 0;
 		uint32_t scale = 360 / boardSize;
 		game::Pointi scaledMousePosition = pixelMode.GetScaledMousePosition();
 
 		// Convert the scaled mouse coordinates 
 		// (PixelModespace, not screenspace) to 
 		// boardspace
-		posx = scaledMousePosition.x - (pixelMode.GetPixelFrameBufferSize().width - 1 - 360);
-		posx = posx / scale;
-		posy = scaledMousePosition.y / scale;
+		posX = scaledMousePosition.x - (pixelMode.GetPixelFrameBufferSize().width - 1 - 360);
+		posX /= scale;
+		posY = scaledMousePosition.y / scale;
 
 		// Center
-		if (DoLightUpdate(posx, posy))
+		if (DoLightUpdate(posX, posY))
 		{
 			// DoLightUpdate will return true if the user
 			// clicked on the game board, but only need
-			// to check the original position
+			// to check the original position to 
+			// add clicks
 			clicks++;
 		}
 		// Left
-		DoLightUpdate(posx - 1, posy);
+		DoLightUpdate(posX - 1, posY);
 		// Up
-		DoLightUpdate(posx, posy - 1);
+		DoLightUpdate(posX, posY - 1);
 		// Right
-		DoLightUpdate(posx + 1, posy);
+		DoLightUpdate(posX + 1, posY);
 		// Down
-		DoLightUpdate(posx, posy + 1);
+		DoLightUpdate(posX, posY + 1);
 
+		// Check for a win!
 		hasWon = CheckForWin();
 	}
 
@@ -291,18 +294,22 @@ public:
 	void Render(const float_t msElapsed)
 	{
 		// Clears and starts new scene
-		geClear(GAME_FRAME_BUFFER_BIT | GAME_DEPTH_STENCIL_BUFFER_BIT, game::Colors::Black);
+		geClear(GAME_FRAME_BUFFER_BIT, game::Colors::Black);
 
+		// Clear the PixelMode buffer
 		pixelMode.Clear(game::Colors::Blue);
 
+		// Render the board 
 		DrawBoard();
 
+		// Show informative text
 		pixelMode.TextClip("FPS: " + std::to_string(geGetFramesPerSecond()), 10, 10, game::Colors::White);
 		pixelMode.TextClip("Seed: " + std::to_string(seed), 10, 20, game::Colors::White);
 		pixelMode.TextClip("Clicks: " + std::to_string(clicks), 10, 30, game::Colors::White);
 		pixelMode.TextClip("Time: " + std::to_string(time), 10, 40, game::Colors::White);
 		pixelMode.TextClip("Attempts: " + std::to_string(attempts), 10, 50, game::Colors::White);
 
+		// If the user has won, show a big celebration!
 		if (hasWon)
 		{
 			pixelMode.Text("YOU WON!", 10, (360 >> 1) - (80 >> 1), game::Colors::Green, 10);
