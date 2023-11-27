@@ -40,6 +40,7 @@ public:
 	float_t time;				// Time it has taken the user to try and solve the board
 	uint32_t attempts;			// Attempts the user has taken to try and solve the board
 	bool hasWon;				// Has the user won?
+	uint32_t generatedClicks;	// How many times the generator "clicked" the game board
 
 	Game() : game::Engine()
 	{
@@ -50,6 +51,7 @@ public:
 		time = 0;
 		hasWon = false;
 		attempts = 1;
+		generatedClicks = 5;
 	}
 
 	// Generates a new random board if newSeed is true, otherwise it 
@@ -112,7 +114,7 @@ public:
 		//     lights accordingly
 		uint32_t x = 0;
 		uint32_t y = 0;
-		for (uint32_t loops = 0; loops < 5; loops++)
+		for (uint32_t loops = 0; loops < generatedClicks; loops++)
 		{
 			x = random.RndRange(0, boardSize - 1);
 			y = random.RndRange(0, boardSize - 1);
@@ -137,7 +139,7 @@ public:
 		game::Color lightColor;				// Color of light to render
 		game::Recti lightRect;				// Rectangle area to draw the light
 
-
+		// Draw the board left to right, top to bottom
 		for (uint32_t y = 0; y < boardSize; y++)
 		{
 			for (uint32_t x = 0; x < boardSize; x++)
@@ -305,9 +307,11 @@ public:
 		// Show informative text
 		pixelMode.TextClip("FPS: " + std::to_string(geGetFramesPerSecond()), 10, 10, game::Colors::White);
 		pixelMode.TextClip("Seed: " + std::to_string(seed), 10, 20, game::Colors::White);
-		pixelMode.TextClip("Clicks: " + std::to_string(clicks), 10, 30, game::Colors::White);
-		pixelMode.TextClip("Time: " + std::to_string(time), 10, 40, game::Colors::White);
-		pixelMode.TextClip("Attempts: " + std::to_string(attempts), 10, 50, game::Colors::White);
+		pixelMode.TextClip("Generator Clicks: " + std::to_string(generatedClicks), 10, 30, game::Colors::White);
+		pixelMode.TextClip("Clicks: " + std::to_string(clicks), 10, 40, game::Colors::White);
+		pixelMode.TextClip("Board Size: " + std::to_string(boardSize) + "x" + std::to_string(boardSize), 10, 50, game::Colors::White);
+		pixelMode.TextClip("Time: " + std::to_string(time), 10, 60, game::Colors::White);
+		pixelMode.TextClip("Attempts: " + std::to_string(attempts), 10, 70, game::Colors::White);
 
 		// If the user has won, show a big celebration!
 		if (hasWon)
