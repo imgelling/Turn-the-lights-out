@@ -22,6 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+//#define GAME_SUPPORT_DIRECTX12
 #include "game.h"
 
 #define LIGHT_ON_COLOR game::Colors::White
@@ -223,14 +224,9 @@ public:
 	{
 		game::Attributes attributes;
 
-		// Enable run-time memory check for debug builds.
-#if defined(DEBUG) | defined(_DEBUG)
-		_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-		//_CrtSetBreakAlloc(613);
-#endif
-
 		attributes.WindowTitle = "Turn the Lights Out";
 		attributes.VsyncOn = true;
+		//attributes.RenderingAPI = game::RenderAPI::DirectX12;
 
 		geSetAttributes(attributes);
 	}
