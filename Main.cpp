@@ -304,7 +304,7 @@ public:
 		pixelMode.TextClip("FPS: " + std::to_string(geGetFramesPerSecond()), 10, 10, game::Colors::White);
 		pixelMode.TextClip("Seed: " + std::to_string(seed), 10, 20, game::Colors::White);
 		pixelMode.TextClip("Generator Clicks: " + std::to_string(generatedClicks), 10, 30, game::Colors::White);
-		pixelMode.TextClip("Clicks: " + std::to_string(clicks), 10, 40, game::Colors::White);
+		pixelMode.TextClip("Player Clicks: " + std::to_string(clicks), 10, 40, game::Colors::White);
 		pixelMode.TextClip("Board Size: " + std::to_string(boardSize) + "x" + std::to_string(boardSize), 10, 50, game::Colors::White);
 		pixelMode.TextClip("Time: " + std::to_string(time), 10, 60, game::Colors::White);
 		pixelMode.TextClip("Attempts: " + std::to_string(attempts), 10, 70, game::Colors::White);
