@@ -283,7 +283,7 @@ public:
 			ResetBoard(true);
 		}
 		// Press a light
-		if (geMouse.WasButtonReleased(geMOUSE_LEFT) && !hasWon)
+		if (geMouse.WasButtonReleased(geM_LEFT) && !hasWon)
 		{
 			CheckMouseClick();
 		}
